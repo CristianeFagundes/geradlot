@@ -47,6 +47,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .bola.sm{width:28px;height:28px;font-size:10px;}
 .bola.hit{background:var(--q-bg);color:var(--q);border-color:var(--q-b);border-width:2px;}
 .bola.miss{opacity:.3;}
+.badge-sena{font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px;background:#EAF3DE;color:#2D5016;border:2px solid #3B6D11;}
+.badge-quina{font-size:11px;font-weight:500;padding:3px 10px;border-radius:8px;background:#FAEEDA;color:#854F0B;border:1px solid #EF9F27;}
+.badge-quadra{font-size:11px;font-weight:500;padding:3px 10px;border-radius:8px;background:#FAEEDA;color:#854F0B;border:1px solid #EF9F27;}
 .pb-sep{width:1px;height:34px;background:var(--border);margin:0 2px;}
 .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
 .mt{font-family:'Lora',serif;font-size:19px;font-weight:500;}
@@ -483,16 +486,178 @@ function renderNumeroDetalhe(){
 }
 
 // ============ HISTÓRICO ============
+// ============ CONFERIR RESULTADO ============
+function proximoSorteio(dataStr, horaStr) {
+  try {
+    const p=dataStr.split('/');
+    const [h,m]=horaStr.split(':').map(Number);
+    const dt=new Date(p[2],p[1]-1,p[0],h,m,0);
+    const dw=dt.getDay(); // 0=dom,1=seg,2=ter,3=qua,4=qui,5=sex,6=sab
+    const diasSorteio=[2,4,6];
+    const ehDiaSorteio=diasSorteio.includes(dw);
+    // se é dia de sorteio e antes das 20h → sorteio é hoje
+    if(ehDiaSorteio && h<20) return dt;
+    // senão → próximo dia de sorteio
+    let d=new Date(dt);
+    // se é dia de sorteio mas depois das 20h, avança 1 dia
+    d.setDate(d.getDate()+1);
+    while(!diasSorteio.includes(d.getDay())) d.setDate(d.getDate()+1);
+    return d;
+  } catch(e){ return null; }
+}
+
+function formatarDataSorteio(dt) {
+  if(!dt) return null;
+  return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+async function conferirResultado(id) {
+  const h=getH();
+  const entrada=h.find(e=>e.id===id);
+  if(!entrada||entrada.jogo!=='mega') return;
+
+  const btn=document.getElementById('btn-conf-'+id);
+  if(btn){btn.disabled=true;btn.textContent='Conferindo...';}
+
+  try {
+    // determina o sorteio correspondente
+    const dtSorteio=proximoSorteio(entrada.data, entrada.hora);
+    const dataFormatada=formatarDataSorteio(dtSorteio);
+
+    // busca resultado pelo verificador do backend usando primeiro jogo como referência
+    // na verdade busca o resultado da data correta
+    const nums=entrada.jogos[0];
+    const data=await jsonp(`${BACKEND}?tipo=verificar&nums=${nums.join('_')}`);
+
+    if(!data||data.status!=='ok'){throw new Error('Backend falhou');}
+
+    // encontra o sorteio da data correta
+    const sorteioCorreto=data.resultados?data.resultados.find(r=>{
+      if(!r.d) return false;
+      const partes=r.d.split('/');
+      const dtR=new Date(partes[2],partes[1]-1,partes[0]);
+      const dtS=new Date(dtSorteio.getFullYear(),dtSorteio.getMonth(),dtSorteio.getDate());
+      return dtR.getTime()===dtS.getTime();
+    }):null;
+
+    // se não achou pelo verificador, busca direto na API da Caixa
+    let resultadoFinal=null;
+    if(sorteioCorreto){
+      resultadoFinal={nums:sorteioCorreto.bolas,data:sorteioCorreto.d};
+    } else {
+      // tenta buscar resultado do último concurso disponível e verifica a data
+      const mega=dadosMega;
+      if(mega&&mega.ultima_data===dataFormatada){
+        resultadoFinal={nums:mega.ultimo_resultado,data:mega.ultima_data};
+      }
+    }
+
+    if(!resultadoFinal){
+      // salva pendente para conferir depois
+      const idx=h.findIndex(e=>e.id===id);
+      if(idx>=0){
+        h[idx].sorteio_data=dataFormatada;
+        h[idx].resultado_pendente=true;
+        saveH(h);
+      }
+      if(btn){btn.disabled=false;btn.textContent='Sorteio pendente';}
+      renderHistorico();
+      return;
+    }
+
+    // calcula acertos para cada jogo
+    const idx=h.findIndex(e=>e.id===id);
+    if(idx>=0){
+      h[idx].resultado_conferido=true;
+      h[idx].sorteio_nums=resultadoFinal.nums;
+      h[idx].sorteio_data=resultadoFinal.data;
+      h[idx].resultado_pendente=false;
+      h[idx].jogos=h[idx].jogos.map(j=>{
+        const acertos=j.filter(n=>resultadoFinal.nums.includes(n)).length;
+        return{nums:j,acertos};
+      });
+      saveH(h);
+    }
+    renderHistorico();
+  } catch(err){
+    if(btn){btn.disabled=false;btn.textContent='Conferir resultado';}
+    alert('Não foi possível conferir. Verifique se o sorteio já ocorreu.');
+  }
+}
+
+function badgeAcerto(acertos){
+  if(acertos===6) return`<span class="badge-sena">🏆 Premiada Sena</span>`;
+  if(acertos===5) return`<span class="badge-quina">⭐ Premiada Quina</span>`;
+  if(acertos===4) return`<span class="badge-quadra">Premiada Quadra</span>`;
+  if(acertos===3) return`<span style="font-size:11px;color:var(--text2);padding:2px 8px;border-radius:8px;background:var(--surface2)">3 acertos</span>`;
+  if(acertos===2) return`<span style="font-size:11px;color:var(--text3);padding:2px 8px;border-radius:8px;background:var(--surface2)">2 acertos</span>`;
+  if(acertos===1) return`<span style="font-size:11px;color:var(--text3);padding:2px 8px;border-radius:8px;background:var(--surface2)">1 acerto</span>`;
+  return`<span style="font-size:11px;color:var(--text3);padding:2px 8px;border-radius:8px;background:var(--surface2)">0 acertos</span>`;
+}
+
 function getH(){try{return JSON.parse(localStorage.getItem(SK)||'[]');}catch(e){return[];}}
 function saveH(h){try{localStorage.setItem(SK,JSON.stringify(h));}catch(e){}}
-function salvarNoHistorico(jogos){const h=getH(),ag=new Date();h.unshift({id:Date.now(),jogo:jogoAtual,data:ag.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}),hora:ag.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),jogos});saveH(h);}
+function salvarNoHistorico(jogos){
+  const h=getH(),ag=new Date();
+  const dataStr=ag.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const horaStr=ag.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const dtSorteio=proximoSorteio(dataStr,horaStr);
+  h.unshift({
+    id:Date.now(),
+    jogo:jogoAtual,
+    data:dataStr,
+    hora:horaStr,
+    sorteio_data:formatarDataSorteio(dtSorteio),
+    resultado_conferido:false,
+    resultado_pendente:false,
+    jogos
+  });
+  saveH(h);
+}
 function deletarEntrada(id){saveH(getH().filter(e=>e.id!==id));renderHistorico();}
 function limparHistorico(){if(confirm('Limpar todo o histórico?')){saveH([]);renderHistorico();}}
+
 function renderHistorico(){
-  const h=getH();document.getElementById('hist-count').textContent=`${h.length} ${h.length===1?'geração':'gerações'}`;
+  const h=getH();
+  document.getElementById('hist-count').textContent=`${h.length} ${h.length===1?'geração':'gerações'}`;
   if(!h.length){document.getElementById('historico-lista').innerHTML='<div class="empty">Nenhuma geração salva ainda</div>';return;}
-  const d=dadosMega,esp=d?(d.total_concursos*6)/60:1;let html='';
-  h.forEach(e=>{const isMega=e.jogo==='mega';html+=`<div class="he"><div class="hh"><div><div class="hd">${e.data} às ${e.hora}</div><div class="hm">${e.jogos.length} jogos · <span class="tag ${isMega?'tag-mega':'tag-pb'}">${isMega?'Mega-Sena':'Powerball'}</span></div></div><button class="btn-del" onclick="deletarEntrada(${e.id})">excluir</button></div>`;e.jogos.forEach((j,idx)=>{const nums=isMega?j:j.nums,pb=!isMega?j.pb:null;html+=`<div class="hjl"><span class="hi">${pad(idx+1)}.</span>`;nums.forEach(n=>{const cls=d?classBola(n,d.frequencias,esp,d.atrasos,20):'';html+=`<div class="bola sm ${cls}">${pad(n)}</div>`;});if(!isMega)html+=`<div class="pb-sep" style="height:28px"></div><div class="bola sm pb">${pad(pb)}</div>`;html+=`<span style="font-size:10px;color:var(--text3);margin-left:3px">Σ${nums.reduce((a,b)=>a+b,0)}</span></div>`;});html+=`</div>`;});
+  const d=dadosMega,esp=d?(d.total_concursos*6)/60:1;
+  let html='';
+  h.forEach(e=>{
+    const isMega=e.jogo==='mega';
+    const conferido=e.resultado_conferido;
+    const pendente=e.resultado_pendente;
+
+    html+=`<div class="he"><div class="hh"><div>
+      <div class="hd">${e.data} às ${e.hora}</div>
+      <div class="hm">${Array.isArray(e.jogos)?e.jogos.length:0} jogos · <span class="tag ${isMega?'tag-mega':'tag-pb'}">${isMega?'Mega-Sena':'Powerball'}</span></div>
+      ${e.sorteio_data?`<div style="font-size:11px;color:var(--text3);margin-top:2px">Sorteio: ${e.sorteio_data}</div>`:''}
+      ${conferido&&e.sorteio_nums?`<div style="font-size:11px;color:var(--text2);margin-top:3px">Resultado: <span style="font-family:'DM Mono',monospace">${e.sorteio_nums.map(pad).join(' – ')}</span></div>`:''}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      ${isMega&&!conferido?`<button id="btn-conf-${e.id}" class="btn-sec" style="font-size:11px;padding:4px 10px" onclick="conferirResultado(${e.id})">${pendente?'Sorteio pendente':'Conferir resultado'}</button>`:''}
+      <button class="btn-del" onclick="deletarEntrada(${e.id})">excluir</button>
+    </div></div>`;
+
+    if(Array.isArray(e.jogos)){
+      e.jogos.forEach((j,idx)=>{
+        const nums=conferido?(j.nums||j):(isMega?j:j.nums);
+        const acertos=conferido?j.acertos:null;
+        const pb=!isMega&&!conferido?j.pb:null;
+        html+=`<div class="hjl"><span class="hi">${pad(idx+1)}.</span>`;
+        nums.forEach(n=>{
+          const hit=conferido&&e.sorteio_nums&&e.sorteio_nums.includes(n);
+          const cls=conferido?(hit?'hit':'miss'):(d?classBola(n,d.frequencias,esp,d.atrasos,20):'');
+          html+=`<div class="bola sm ${cls}">${pad(n)}</div>`;
+        });
+        if(pb)html+=`<div class="pb-sep" style="height:28px"></div><div class="bola sm pb">${pad(pb)}</div>`;
+        html+=`<span style="font-size:10px;color:var(--text3);margin-left:3px">Σ${nums.reduce((a,b)=>a+b,0)}</span>`;
+        if(conferido&&acertos!==null)html+=` ${badgeAcerto(acertos)}`;
+        html+=`</div>`;
+      });
+    }
+    html+=`</div>`;
+  });
   document.getElementById('historico-lista').innerHTML=html;
 }
 
