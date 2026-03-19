@@ -520,48 +520,46 @@ async function conferirResultado(id) {
   if(btn){btn.disabled=true;btn.textContent='Conferindo...';}
 
   try {
-    // determina o sorteio correspondente
     const dtSorteio=proximoSorteio(entrada.data, entrada.hora);
     const dataFormatada=formatarDataSorteio(dtSorteio);
 
-    // busca resultado pelo verificador do backend usando primeiro jogo como referência
-    // na verdade busca o resultado da data correta
-    const nums=entrada.jogos[0];
-    const data=await jsonp(`${BACKEND}?tipo=verificar&nums=${nums.join('_')}`);
-
-    if(!data||data.status!=='ok'){throw new Error('Backend falhou');}
-
-    // encontra o sorteio da data correta
-    const sorteioCorreto=data.resultados?data.resultados.find(r=>{
-      if(!r.d) return false;
-      const partes=r.d.split('/');
-      const dtR=new Date(partes[2],partes[1]-1,partes[0]);
-      const dtS=new Date(dtSorteio.getFullYear(),dtSorteio.getMonth(),dtSorteio.getDate());
-      return dtR.getTime()===dtS.getTime();
-    }):null;
-
-    // se não achou pelo verificador, busca direto na API da Caixa
+    // Estratégia 1: dados já carregados no app batem com a data
     let resultadoFinal=null;
-    if(sorteioCorreto){
-      resultadoFinal={nums:sorteioCorreto.bolas,data:sorteioCorreto.d};
-    } else {
-      // tenta buscar resultado do último concurso disponível e verifica a data
-      const mega=dadosMega;
-      if(mega&&mega.ultima_data===dataFormatada){
-        resultadoFinal={nums:mega.ultimo_resultado,data:mega.ultima_data};
-      }
+    if(dadosMega && dadosMega.ultima_data===dataFormatada) {
+      resultadoFinal={nums:dadosMega.ultimo_resultado, data:dadosMega.ultima_data};
     }
 
-    if(!resultadoFinal){
-      // salva pendente para conferir depois
-      const idx=h.findIndex(e=>e.id===id);
-      if(idx>=0){
-        h[idx].sorteio_data=dataFormatada;
-        h[idx].resultado_pendente=true;
-        saveH(h);
-      }
-      if(btn){btn.disabled=false;btn.textContent='Sorteio pendente';}
-      renderHistorico();
+    // Estratégia 2: busca na API da Caixa direto pelo último concurso e verifica data
+    if(!resultadoFinal) {
+      try {
+        const resp=await jsonp('https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena/');
+        if(resp && resp.dataApuracao===dataFormatada && resp.listaDezenas) {
+          resultadoFinal={nums:resp.listaDezenas.map(Number), data:resp.dataApuracao};
+        }
+      } catch(e2){}
+    }
+
+    // Estratégia 3: busca via backend verificar com o primeiro jogo
+    if(!resultadoFinal) {
+      try {
+        const primeiroJogo=Array.isArray(entrada.jogos[0])?entrada.jogos[0]:entrada.jogos[0].nums||entrada.jogos[0];
+        const data=await jsonp(`${BACKEND}?tipo=verificar&nums=${primeiroJogo.join('_')}`);
+        if(data&&data.status==='ok'&&data.resultados) {
+          const sc=data.resultados.find(r=>{
+            if(!r.d)return false;
+            const pts=r.d.split('/');
+            const dtR=new Date(pts[2],pts[1]-1,pts[0]);
+            const dtS=new Date(dtSorteio.getFullYear(),dtSorteio.getMonth(),dtSorteio.getDate());
+            return dtR.getTime()===dtS.getTime();
+          });
+          if(sc) resultadoFinal={nums:sc.bolas, data:sc.d};
+        }
+      } catch(e3){}
+    }
+
+    if(!resultadoFinal) {
+      if(btn){btn.disabled=false;btn.textContent='Conferir resultado';}
+      alert(`Resultado do sorteio de ${dataFormatada} ainda não disponível. Tente novamente mais tarde.`);
       return;
     }
 
@@ -573,15 +571,16 @@ async function conferirResultado(id) {
       h[idx].sorteio_data=resultadoFinal.data;
       h[idx].resultado_pendente=false;
       h[idx].jogos=h[idx].jogos.map(j=>{
-        const acertos=j.filter(n=>resultadoFinal.nums.includes(n)).length;
-        return{nums:j,acertos};
+        const nums=Array.isArray(j)?j:(j.nums||j);
+        const acertos=nums.filter(n=>resultadoFinal.nums.includes(n)).length;
+        return{nums, acertos};
       });
       saveH(h);
     }
     renderHistorico();
   } catch(err){
     if(btn){btn.disabled=false;btn.textContent='Conferir resultado';}
-    alert('Não foi possível conferir. Verifique se o sorteio já ocorreu.');
+    alert('Erro ao conferir. Verifique sua conexão.');
   }
 }
 
@@ -595,7 +594,14 @@ function badgeAcerto(acertos){
   return`<span style="font-size:11px;color:var(--text3);padding:2px 8px;border-radius:8px;background:var(--surface2)">0 acertos</span>`;
 }
 
-function getH(){try{return JSON.parse(localStorage.getItem(SK)||'[]');}catch(e){return[];}}
+function sorteioJaOcorreu(sorteio_data) {
+  if(!sorteio_data) return false;
+  try {
+    const p=sorteio_data.split('/');
+    const dtSorteio=new Date(p[2],p[1]-1,p[0],20,30,0); // 20h30 — margem após o sorteio
+    return new Date() > dtSorteio;
+  } catch(e){ return false; }
+}
 function saveH(h){try{localStorage.setItem(SK,JSON.stringify(h));}catch(e){}}
 function salvarNoHistorico(jogos){
   const h=getH(),ag=new Date();
@@ -635,7 +641,7 @@ function renderHistorico(){
       ${conferido&&e.sorteio_nums?`<div style="font-size:11px;color:var(--text2);margin-top:3px">Resultado: <span style="font-family:'DM Mono',monospace">${e.sorteio_nums.map(pad).join(' – ')}</span></div>`:''}
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-      ${isMega&&!conferido?`<button id="btn-conf-${e.id}" class="btn-sec" style="font-size:11px;padding:4px 10px" onclick="conferirResultado(${e.id})">${pendente?'Sorteio pendente':'Conferir resultado'}</button>`:''}
+      ${isMega&&!conferido&&sorteioJaOcorreu(e.sorteio_data)?`<button id="btn-conf-${e.id}" class="btn-sec" style="font-size:11px;padding:4px 10px" onclick="conferirResultado(${e.id})">Conferir resultado</button>`:''}
       <button class="btn-del" onclick="deletarEntrada(${e.id})">excluir</button>
     </div></div>`;
 
