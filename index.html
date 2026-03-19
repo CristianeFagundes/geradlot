@@ -268,11 +268,11 @@ function pad(n){return String(n).padStart(2,'0');}
 function showLoading(txt,pct){document.getElementById('loading-overlay').classList.add('show');document.getElementById('loading-txt').textContent=txt;document.getElementById('progress-fill').style.width=pct+'%';}
 function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
 function setStatus(t,txt){document.getElementById('sdot').className='sdot '+t;document.getElementById('stxt').textContent=txt;}
-function jsonp(url){
+function jsonp(url,timeout=10000){
   return new Promise((res,rej)=>{
     const cb='cb_'+Date.now()+'_'+Math.floor(Math.random()*9999);
     const s=document.createElement('script');
-    const t=setTimeout(()=>{cleanup();rej(new Error('timeout'));},15000);
+    const t=setTimeout(()=>{cleanup();rej(new Error('timeout'));},timeout);
     function cleanup(){clearTimeout(t);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);}
     window[cb]=(d)=>{cleanup();res(d);};
     const sep=url.includes('?')?'&':'?';
@@ -288,14 +288,14 @@ function bfPares(){const p={};for(let i=1;i<=60;i++){const l=[];for(let j=1;j<=6
 
 async function init(){
   showLoading('Conectando ao backend...',10);
-  try{const d=await jsonp(BACKEND+'?jogo=mega');if(d&&d.status==='ok'&&d.total_concursos>0)dadosMega=d;else throw 0;}catch(e){dadosMega=bfMega();}
+  try{const d=await jsonp(BACKEND+'?jogo=mega',12000);if(d&&d.status==='ok'&&d.total_concursos>0)dadosMega=d;else throw 0;}catch(e){dadosMega=bfMega();}
   showLoading('Carregando Powerball...',30);
-  try{const d=await jsonp(BACKEND+'?jogo=powerball');if(d&&d.status==='ok')dadosPB=d;else throw 0;}catch(e){dadosPB=bfPB();}
+  try{const d=await jsonp(BACKEND+'?jogo=powerball',10000);if(d&&d.status==='ok')dadosPB=d;else throw 0;}catch(e){dadosPB=bfPB();}
   showLoading('Carregando análise de posições...',52);
-  try{const d=await jsonp(BACKEND+'?tipo=analise');if(d&&d.status==='ok')analiseOrdem=d;else throw 0;}catch(e){analiseOrdem=bfAnalise();}
+  try{const d=await jsonp(BACKEND+'?tipo=analise',10000);if(d&&d.status==='ok')analiseOrdem=d;else throw 0;}catch(e){analiseOrdem=bfAnalise();}
   showLoading('Calculando matriz de pares...',76);
-  try{const d=await jsonp(BACKEND+'?tipo=pares');if(d&&d.status==='ok')matrizPares=d;else throw 0;}catch(e){matrizPares=bfPares();}
-  showLoading('Finalizando...',95);
+  try{const d=await jsonp(BACKEND+'?tipo=pares',12000);if(d&&d.status==='ok')matrizPares=d;else throw 0;}catch(e){matrizPares=bfPares();}
+  
   const fb=dadosMega.status==='fallback';
   const statusTxt=fb?`Dados históricos integrados · ${dadosMega.total_concursos} concursos`:`Dados reais · Concurso ${dadosMega.ultimo_concurso} · ${dadosMega.ultima_data} · ${dadosMega.total_concursos} sorteios`;
   setStatus(fb?'erro':'ok',statusTxt);
