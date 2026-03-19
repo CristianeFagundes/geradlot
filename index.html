@@ -163,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="layout">
   <div class="sidebar">
-    <div class="tabs">
+    <div class="tabs" style="margin-top:.5rem">
       <button class="tab active" onclick="setJogo('mega')">Mega-Sena</button>
       <button class="tab" onclick="setJogo('powerball')">Powerball</button>
     </div>
@@ -272,12 +272,13 @@ function jsonp(url){
     const t=setTimeout(()=>{cleanup();rej(new Error('timeout'));},15000);
     function cleanup(){clearTimeout(t);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);}
     window[cb]=(d)=>{cleanup();res(d);};
-    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    const sep=url.includes('?')?'&':'?';
+    s.src=url+sep+'callback='+cb+'&_nc='+Date.now()+Math.random().toString(36).slice(2);
     s.onerror=()=>{cleanup();rej(new Error('erro'));};
     document.head.appendChild(s);
   });
 }
-function bfMega(){const f={},a={},iv={};for(let i=1;i<=60;i++){f[i]=FR[i];a[i]=AR[i];iv[i]={media:10,std:3,min:1,max:35,atual:AR[i],prob_10:65,prob_20:85,anomalo:AR[i]>28};}return{status:'fallback',total_concursos:2984,ultimo_concurso:2984,ultima_data:'14/03/2026',ultimo_resultado:[6,11,15,28,42,60],frequencias:f,atrasos:a,intervalos:iv,soma_media:183,soma_std:40};}
+function bfMega(){const f={},a={},iv={};for(let i=1;i<=60;i++){f[i]=FR[i];a[i]=AR[i];iv[i]={media:10,std:3,min:1,max:35,atual:AR[i],prob_10:65,prob_20:85,anomalo:AR[i]>28};}return{status:'fallback',total_concursos:2985,ultimo_concurso:2985,ultima_data:'17/03/2026',ultimo_resultado:[6,8,21,32,41,60],frequencias:f,atrasos:a,intervalos:iv,soma_media:183,soma_std:40};}
 function bfPB(){const f={},a={},fpb={},iv={};const e5=(2000*5)/69,ePB=2000/26;for(let i=1;i<=69;i++){f[i]=Math.round(e5*(1+(Math.random()*.3-.15)));a[i]=Math.floor(Math.random()*18);iv[i]={media:14,std:4,min:1,max:40,atual:a[i],prob_10:55,prob_20:80,anomalo:false};}for(let i=1;i<=26;i++)fpb[i]=Math.round(ePB*(1+(Math.random()*.4-.2)));return{status:'fallback',frequencias:f,frequencias_pb:fpb,atrasos:a,intervalos:iv,soma_media:160,soma_std:30,total_concursos:2000};}
 function bfAnalise(){const fp={},pp={},tr={};for(let i=1;i<=60;i++){fp[i]={1:Math.floor(Math.random()*80+40),2:Math.floor(Math.random()*80+40),3:Math.floor(Math.random()*80+40),4:Math.floor(Math.random()*80+40),5:Math.floor(Math.random()*80+40),6:Math.floor(Math.random()*80+40)};const vs=Object.values(fp[i]),mx=Math.max(...vs),pos=vs.indexOf(mx)+1;pp[i]={posicoes:fp[i],melhor_posicao:pos,pct_melhor:Math.round((mx/vs.reduce((a,b)=>a+b,0))*100),acima_esperado:mx>vs.reduce((a,b)=>a+b,0)/6*1.1};const r=.85+Math.random()*.3;tr[i]={freq:Math.round(r*18),ratio:Math.round(r*100)/100,status:r>1.15?'aquecendo':r<.85?'esfriando':'normal'};}return{status:'fallback',total_concursos:2984,freq_posicao:fp,pref_posicao:pp,tendencia_recente:tr};}
 function bfPares(){const p={};for(let i=1;i<=60;i++){const l=[];for(let j=1;j<=60;j++){if(i===j)continue;l.push({n:j,juntos:Math.floor(Math.random()*30+10),pct:Math.round((Math.random()*15+5)*10)/10});}l.sort((a,b)=>b.juntos-a.juntos);p[i]={aparicoes:FR[i],parceiros:l.slice(0,10),anti_parceiros:l.slice(-10).reverse()};}return{status:'fallback',total_concursos:2984,pares:p};}
@@ -293,7 +294,8 @@ async function init(){
   try{const d=await jsonp(BACKEND+'?tipo=pares');if(d&&d.status==='ok')matrizPares=d;else throw 0;}catch(e){matrizPares=bfPares();}
   showLoading('Finalizando...',95);
   const fb=dadosMega.status==='fallback';
-  setStatus(fb?'erro':'ok',fb?'Dados históricos integrados · 2984 concursos':`Dados reais · Concurso ${dadosMega.ultimo_concurso} · ${dadosMega.ultima_data} · ${dadosMega.total_concursos} sorteios`);
+  const statusTxt=fb?`Dados históricos integrados · ${dadosMega.total_concursos} concursos`:`Dados reais · Concurso ${dadosMega.ultimo_concurso} · ${dadosMega.ultima_data} · ${dadosMega.total_concursos} sorteios`;
+  setStatus(fb?'erro':'ok',statusTxt);
   initVerificador();mostrarUltimo();renderAnaliseGeral();renderHistorico();renderAnomalos();
   hideLoading();
   const btn=document.getElementById('btn-gerar');btn.disabled=false;btn.textContent='Gerar combinações';
@@ -427,7 +429,7 @@ async function verificarProximidade(){
   const btn=document.getElementById('btn-verificar');btn.disabled=true;btn.textContent='Verificando...';
   document.getElementById('prox-resultado').innerHTML=`<div class="card" style="display:flex;align-items:center;gap:10px;padding:1rem"><div class="spinner sm"></div><span style="font-size:13px;color:var(--text2)">Consultando ${isMega?'2.984':'2.000'} sorteios no backend...</span></div>`;
   try{
-    const data=await jsonp(`${BACKEND}?tipo=verificar&nums=${nums.join(',')}`);
+    const data=await jsonp(`${BACKEND}?tipo=verificar&nums=${nums.join('_')}`);
     if(!data||data.status!=='ok')throw new Error();
     const{total_analisados:ta,contagem:ct,resultados:rs}=data;
     let html=`<div class="card"><div class="slabel">Resultado — ${ta} sorteios analisados</div><div class="mg3" style="margin-bottom:8px"><div class="metric"><div class="ml">6 acertos</div><div class="mv">${ct[6]||0}x</div></div><div class="metric"><div class="ml">5 acertos</div><div class="mv">${ct[5]||0}x</div></div><div class="metric"><div class="ml">4 acertos</div><div class="mv">${ct[4]||0}x</div></div></div><div class="metric" style="margin-bottom:8px"><div class="ml">3 acertos</div><div class="mv">${ct[3]||0}x <span style="font-size:11px;font-weight:400;color:var(--text3)">em ${ta} sorteios (${(((ct[3]||0)/ta)*100).toFixed(1)}%)</span></div></div><p style="font-size:11px;color:var(--text3)">Combinação: <span style="font-family:'DM Mono',monospace">${nums.map(pad).join(' – ')}</span></p></div>`;
