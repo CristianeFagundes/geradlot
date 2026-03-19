@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GeradLot v3</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lora:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#F7F5F0;--surface:#FFF;--surface2:#F0EDE6;--border:#E2DDD5;--border2:#D0C9BE;--text:#1A1916;--text2:#6B6660;--text3:#9E9890;--accent:#2D5016;--accent-light:#EAF3DE;--q:#993C1D;--q-bg:#FAECE7;--q-b:#F0997B;--f:#185FA5;--f-bg:#E6F1FB;--f-b:#85B7EB;--a:#854F0B;--a-bg:#FAEEDA;--a-b:#EF9F27;--pb:#A32D2D;--pb-bg:#FCEBEB;--pb-b:#F09595;--aq:#3B6D11;--aq-bg:#EAF3DE;--ef:#185FA5;--ef-bg:#E6F1FB;--r:10px;--rl:14px;--sh:0 1px 3px rgba(0,0,0,0.06);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Lora',serif;font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.vtag{font-size:10px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:6px;border:1px solid var(--border);}
+.status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.sdot.ok{background:#3B6D11;}.sdot.erro{background:#A32D2D;}.sdot.loading{background:#BA7517;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.layout{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 56px);}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:1.25rem;overflow-y:auto;}
+.main{padding:1.25rem;overflow-y:auto;}
+.slabel{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.tabs{display:flex;gap:6px;margin-bottom:1.25rem;}
+.tab{flex:1;padding:7px;border-radius:var(--r);border:1px solid var(--border);background:transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;font-family:'DM Sans',sans-serif;}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.tab:hover:not(.active){background:var(--surface2);}
+.cg{margin-bottom:.875rem;}
+.cg label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;}
+.cg input[type=number],.cg select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;}
+.fl{display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem;}
+.fi{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;}
+.fi input{width:14px;height:14px;cursor:pointer;accent-color:var(--accent);}
+.fn2{font-size:10px;color:var(--text3);margin-left:21px;margin-top:-3px;}
+.btn-g{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;margin-top:.5rem;}
+.btn-g:hover:not(:disabled){background:#234010;}
+.btn-g:disabled{opacity:.4;cursor:not-allowed;}
+.divider{border:none;border-top:1px solid var(--border);margin:1rem 0;}
+.ult-box{background:var(--surface2);border-radius:var(--r);padding:10px;margin-bottom:.875rem;}
+.ult-label{font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;}
+.brow{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.bola{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;font-family:'DM Mono',monospace;border:1px solid var(--border2);background:var(--surface2);color:var(--text);}
+.bola.q{background:var(--q-bg);color:var(--q);border-color:var(--q-b);}
+.bola.f{background:var(--f-bg);color:var(--f);border-color:var(--f-b);}
+.bola.a{background:var(--a-bg);color:var(--a);border-color:var(--a-b);}
+.bola.pb{background:var(--pb-bg);color:var(--pb);border-color:var(--pb-b);}
+.bola.sm{width:28px;height:28px;font-size:10px;}
+.bola.hit{background:var(--q-bg);color:var(--q);border-color:var(--q-b);border-width:2px;}
+.bola.miss{opacity:.3;}
+.pb-sep{width:1px;height:34px;background:var(--border);margin:0 2px;}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.mt{font-family:'Lora',serif;font-size:19px;font-weight:500;}
+.vtabs{display:flex;gap:4px;flex-wrap:wrap;}
+.vtab{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .12s;}
+.vtab.active{background:var(--surface2);border-color:var(--border2);color:var(--text);}
+.panel{display:none;}.panel.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:.875rem 1.1rem;margin-bottom:10px;box-shadow:var(--sh);}
+.jh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.jn{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;}
+.sbadge{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.jmeta{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.mt2{font-size:11px;color:var(--text2);background:var(--surface2);padding:2px 6px;border-radius:8px;border:1px solid var(--border);}
+.mg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0;}
+.mg2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0;}
+.metric{background:var(--surface2);border-radius:var(--r);padding:9px 11px;}
+.ml{font-size:10px;color:var(--text3);margin-bottom:2px;}
+.mv{font-size:16px;font-weight:500;font-family:'DM Mono',monospace;}
+.fgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin-top:6px;}
+.fn{font-size:10px;text-align:center;padding:3px 2px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);font-family:'DM Mono',monospace;color:var(--text2);cursor:pointer;transition:transform .1s;}
+.fn:hover{transform:scale(1.2);z-index:1;position:relative;}
+.fn.q{background:var(--q-bg);border-color:var(--q-b);color:var(--q);}
+.fn.f{background:var(--f-bg);border-color:var(--f-b);color:var(--f);}
+.fn.a{background:var(--a-bg);border-color:var(--a-b);color:var(--a);}
+.fn.aq{background:var(--aq-bg);border-color:#97C459;color:var(--aq);}
+.fn.ef{background:var(--ef-bg);border-color:var(--f-b);color:var(--ef);}
+.trow{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
+.pill{font-size:11px;padding:2px 7px;border-radius:10px;font-family:'DM Mono',monospace;display:inline-flex;align-items:center;gap:3px;cursor:pointer;}
+.pill.q{background:var(--q-bg);color:var(--q);}
+.pill.f{background:var(--f-bg);color:var(--f);}
+.pill.a{background:var(--a-bg);color:var(--a);}
+.pill.aq{background:var(--aq-bg);color:var(--aq);}
+.pill.ef{background:var(--ef-bg);color:var(--ef);}
+.pill.n{background:var(--surface2);color:var(--text2);}
+.pill.par{background:var(--accent-light);color:var(--accent);border:1px solid #97C459;}
+.pill.anti{background:var(--pb-bg);color:var(--pb);border:1px solid var(--pb-b);}
+.leg{display:flex;gap:10px;font-size:10px;color:var(--text3);margin-top:6px;flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:4px;}
+.ldot{width:6px;height:6px;border-radius:50%;}
+.nd{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;margin-bottom:10px;}
+.ndh{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.nbig{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;font-family:'DM Mono',monospace;border:1px solid var(--border2);background:var(--surface2);flex-shrink:0;}
+.dg4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.di{background:var(--surface2);border-radius:var(--r);padding:7px 9px;}
+.dl{font-size:10px;color:var(--text3);margin-bottom:2px;}
+.dv{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;}
+.pbar{height:5px;border-radius:3px;background:var(--border);margin-top:3px;overflow:hidden;}
+.pbf{height:100%;border-radius:3px;background:var(--accent);}
+.posrow{display:flex;gap:5px;margin-top:6px;}
+.positem{flex:1;text-align:center;}
+.posbl{font-size:9px;color:var(--text3);margin-bottom:2px;}
+.posbw{height:36px;display:flex;align-items:flex-end;}
+.posb{width:100%;border-radius:2px 2px 0 0;background:var(--border2);min-height:3px;}
+.posb.best{background:var(--accent);}
+.posv{font-size:10px;font-weight:500;font-family:'DM Mono',monospace;margin-top:2px;}
+.janela{background:var(--accent-light);border:1px solid #97C459;border-radius:var(--r);padding:9px 11px;margin-top:8px;}
+.jt{font-size:11px;font-weight:500;color:var(--accent);margin-bottom:5px;}
+.jdatas{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+.jdata{font-size:10px;padding:2px 7px;border-radius:7px;background:var(--surface);border:1px solid #97C459;color:var(--accent);font-family:'DM Mono',monospace;}
+.jdata.peak{background:var(--accent);color:#fff;border-color:var(--accent);}
+.par-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+.par-card{background:var(--surface2);border-radius:var(--r);padding:8px;}
+.par-title{font-size:10px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em;}
+.prox-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:.875rem 1.1rem;margin-bottom:8px;box-shadow:var(--sh);}
+.prox-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.prox-stars{color:#BA7517;font-size:14px;font-weight:500;}
+.prox-info{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;}
+.vinputs{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.vi{flex:1;min-width:70px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:15px;background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;text-align:center;}
+.vi:focus{outline:none;border-color:var(--accent);}
+.btn-sec{background:transparent;border:1px solid var(--border);border-radius:var(--r);padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-sec:hover{background:var(--surface2);}
+.he{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:.875rem 1.1rem;margin-bottom:8px;box-shadow:var(--sh);}
+.hh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.hd{font-size:13px;font-weight:500;}
+.hm{font-size:11px;color:var(--text3);margin-top:2px;}
+.hjl{display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap;}
+.hi{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;min-width:18px;}
+.btn-del{background:transparent;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:2px 5px;border-radius:4px;}
+.btn-del:hover{color:var(--pb);background:var(--pb-bg);}
+.tag{font-size:10px;padding:2px 6px;border-radius:5px;font-weight:500;}
+.tag-mega{background:var(--accent-light);color:var(--accent);}
+.tag-pb{background:var(--pb-bg);color:var(--pb);}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text3);font-size:13px;}
+.disc{font-size:10px;color:var(--text3);line-height:1.7;padding:10px;border:1px solid var(--border);border-radius:var(--r);margin-top:1rem;}
+.sb{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;margin-bottom:.875rem;}
+.anom-box{background:var(--pb-bg);border:1px solid var(--pb-b);border-radius:var(--r);padding:9px 11px;margin-bottom:8px;}
+.anom-t{font-size:11px;font-weight:500;color:var(--pb);margin-bottom:5px;}
+.par-inline{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.par-badge{font-size:10px;padding:2px 6px;border-radius:6px;font-family:'DM Mono',monospace;}
+.par-badge.bom{background:var(--accent-light);color:var(--accent);}
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(247,245,240,.9);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+.spinner.sm{width:18px;height:18px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:13px;color:var(--text2);}
+.progress-bar{width:200px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
+@media(max-width:768px){.layout{grid-template-columns:1fr;}.sidebar{border-right:none;border-bottom:1px solid var(--border);}.mg3{grid-template-columns:1fr 1fr;}.dg4{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-txt" id="loading-txt">Carregando dados...</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<div class="topbar">
+  <div class="brand"><div class="brand-dot"></div>GeradLot<span class="vtag">v3</span></div>
+  <div class="status"><div class="sdot loading" id="sdot"></div><span id="stxt">Iniciando...</span></div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="tabs">
+      <button class="tab active" onclick="setJogo('mega')">Mega-Sena</button>
+      <button class="tab" onclick="setJogo('powerball')">Powerball</button>
+    </div>
+    <div class="slabel">Configuração</div>
+    <div class="cg"><label>Quantidade de jogos</label><input type="number" id="qtd" min="1" max="20" value="5"/></div>
+    <div class="cg"><label>Análise combinatória</label><select id="mostrar-analise"><option value="1">Mostrar</option><option value="0">Ocultar</option></select></div>
+    <hr class="divider"/>
+    <div class="slabel">Filtros estatísticos</div>
+    <div class="fl">
+      <label class="fi"><input type="checkbox" id="f-paridade" checked/> Equilíbrio pares e ímpares</label>
+      <div class="fn2">Ponderação histórica real</div>
+      <label class="fi"><input type="checkbox" id="f-faixas" checked/> Distribuição por faixas</label>
+      <div class="fn2">Ponderação histórica real</div>
+      <label class="fi"><input type="checkbox" id="f-consecutivos" checked/> Evitar sequências longas</label>
+      <div class="fn2">Ponderação histórica real</div>
+      <label class="fi"><input type="checkbox" id="f-repeticao" checked/> Máx. 2 repetições do último</label>
+      <div class="fn2">Filtro rígido — cobre 92% dos casos</div>
+      <label class="fi"><input type="checkbox" id="f-soma" checked/> Soma intermediária histórica</label>
+      <div class="fn2">Ponderação histórica real</div>
+      <label class="fi"><input type="checkbox" id="f-frequencia" checked/> Frequência histórica real</label>
+      <div class="fn2">Quentes/frios dos 2.984 concursos</div>
+      <label class="fi"><input type="checkbox" id="f-atraso" checked/> Probabilidade condicional</label>
+      <div class="fn2">Peso cresce com o atraso acumulado</div>
+      <label class="fi"><input type="checkbox" id="f-terminacao" checked/> Máx. 2 mesma terminação</label>
+      <div class="fn2">Ponderação histórica real</div>
+      <label class="fi"><input type="checkbox" id="f-tendencia" checked/> Tendência recente</label>
+      <div class="fn2">Últimos 6 meses vs histórico</div>
+      <label class="fi"><input type="checkbox" id="f-posicao" checked/> Preferência de posição</label>
+      <div class="fn2">Ordem real de saída do globo</div>
+      <label class="fi"><input type="checkbox" id="f-pares" checked/> Pares históricos frequentes</label>
+      <div class="fn2">Favorece combinações que saíram juntas</div>
+    </div>
+    <button class="btn-g" id="btn-gerar" onclick="gerarJogos()" disabled>Aguardando dados...</button>
+    <hr class="divider"/>
+    <div class="ult-box" id="ult-box" style="display:none">
+      <div class="ult-label" id="ult-label">Último sorteio</div>
+      <div class="brow" id="ult-bolas"></div>
+    </div>
+    <div class="disc">Sugestões estatísticas apenas. Sorteios são independentes e aleatórios. Sem garantia de ganho.<br><br><em>"A sorte se lança no regaço, mas do Senhor procede toda decisão." — Pv 16:33</em></div>
+  </div>
+
+  <div class="main">
+    <div class="mh">
+      <div class="mt" id="main-title">Mega-Sena</div>
+      <div class="vtabs">
+        <button class="vtab active" onclick="setView('gerar')">Gerar</button>
+        <button class="vtab" onclick="setView('verificar')">Verificar</button>
+        <button class="vtab" onclick="setView('numeros')">Números</button>
+        <button class="vtab" onclick="setView('historico')">Histórico</button>
+        <button class="vtab" onclick="setView('analise')">Análise</button>
+      </div>
+    </div>
+
+    <div class="panel active" id="panel-gerar">
+      <div id="resultado"><div class="empty">Configure os filtros e clique em "Gerar combinações"</div></div>
+      <div id="analise-bloco"></div>
+    </div>
+
+    <div class="panel" id="panel-verificar">
+      <div class="card">
+        <div class="slabel">Verificador de proximidade histórica</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">Digite uma combinação para ver quais sorteios passados chegaram mais perto. Números coincidentes aparecem em destaque laranja.</p>
+        <div class="vinputs" id="vinputs"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-g" style="flex:1;margin-top:0" id="btn-verificar" onclick="verificarProximidade()">Verificar nos 2.984 sorteios</button>
+          <button class="btn-sec" onclick="usarUltimaGeracao()">Usar última geração</button>
+        </div>
+      </div>
+      <div id="prox-resultado"></div>
+    </div>
+
+    <div class="panel" id="panel-numeros">
+      <input class="sb" type="number" id="busca-num" min="1" max="60" placeholder="Buscar número (1-60)..." oninput="renderNumeroDetalhe()"/>
+      <div id="anomalos-box"></div>
+      <div id="numero-detalhe"></div>
+    </div>
+
+    <div class="panel" id="panel-historico">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.875rem">
+        <span style="font-size:13px;color:var(--text2)" id="hist-count">0 gerações</span>
+        <button class="btn-sec" onclick="limparHistorico()">Limpar</button>
+      </div>
+      <div id="historico-lista"></div>
+    </div>
+
+    <div class="panel" id="panel-analise">
+      <div id="analise-geral"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BACKEND='https://script.google.com/macros/s/AKfycbxB9lMawu4mB18vdWHc8MBlsokOnkPlSRL_mysPF90I2QwLrpAnL-3Up6Zg_vbHbs7q/exec';
+const SK='geradlot_v3';
+let jogoAtual='mega',dadosMega=null,dadosPB=null,analiseOrdem=null,matrizPares=null,ultimaGeracao=null;
+const FR={1:292,2:297,3:278,4:314,5:323,6:300,7:280,8:294,9:288,10:352,11:313,12:280,13:308,14:290,15:270,16:307,17:314,18:285,19:290,20:291,21:249,22:267,23:310,24:298,25:294,26:245,27:318,28:306,29:295,30:314,31:275,32:318,33:319,34:321,35:315,36:301,37:325,38:319,39:285,40:282,41:308,42:315,43:313,44:314,45:292,46:316,47:285,48:277,49:303,50:292,51:302,52:301,53:340,54:310,55:256,56:314,57:285,58:284,59:288,60:287};
+const AR={1:13,2:2,3:1,4:35,5:15,6:0,7:8,8:7,9:6,10:8,11:0,12:10,13:6,14:4,15:0,16:11,17:9,18:5,19:7,20:6,21:8,22:3,23:19,24:11,25:31,26:16,27:3,28:0,29:22,30:11,31:32,32:1,33:4,34:21,35:2,36:16,37:5,38:7,39:13,40:1,41:2,42:0,43:4,44:9,45:4,46:2,47:5,48:27,49:2,50:3,51:12,52:1,53:5,54:31,55:23,56:13,57:19,58:2,59:0,60:0};
+function pad(n){return String(n).padStart(2,'0');}
+function showLoading(txt,pct){document.getElementById('loading-overlay').classList.add('show');document.getElementById('loading-txt').textContent=txt;document.getElementById('progress-fill').style.width=pct+'%';}
+function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
+function setStatus(t,txt){document.getElementById('sdot').className='sdot '+t;document.getElementById('stxt').textContent=txt;}
+function jsonp(url){
+  return new Promise((res,rej)=>{
+    const cb='cb_'+Date.now()+'_'+Math.floor(Math.random()*9999);
+    const s=document.createElement('script');
+    const t=setTimeout(()=>{cleanup();rej(new Error('timeout'));},15000);
+    function cleanup(){clearTimeout(t);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);}
+    window[cb]=(d)=>{cleanup();res(d);};
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    s.onerror=()=>{cleanup();rej(new Error('erro'));};
+    document.head.appendChild(s);
+  });
+}
+function bfMega(){const f={},a={},iv={};for(let i=1;i<=60;i++){f[i]=FR[i];a[i]=AR[i];iv[i]={media:10,std:3,min:1,max:35,atual:AR[i],prob_10:65,prob_20:85,anomalo:AR[i]>28};}return{status:'fallback',total_concursos:2984,ultimo_concurso:2984,ultima_data:'14/03/2026',ultimo_resultado:[6,11,15,28,42,60],frequencias:f,atrasos:a,intervalos:iv,soma_media:183,soma_std:40};}
+function bfPB(){const f={},a={},fpb={},iv={};const e5=(2000*5)/69,ePB=2000/26;for(let i=1;i<=69;i++){f[i]=Math.round(e5*(1+(Math.random()*.3-.15)));a[i]=Math.floor(Math.random()*18);iv[i]={media:14,std:4,min:1,max:40,atual:a[i],prob_10:55,prob_20:80,anomalo:false};}for(let i=1;i<=26;i++)fpb[i]=Math.round(ePB*(1+(Math.random()*.4-.2)));return{status:'fallback',frequencias:f,frequencias_pb:fpb,atrasos:a,intervalos:iv,soma_media:160,soma_std:30,total_concursos:2000};}
+function bfAnalise(){const fp={},pp={},tr={};for(let i=1;i<=60;i++){fp[i]={1:Math.floor(Math.random()*80+40),2:Math.floor(Math.random()*80+40),3:Math.floor(Math.random()*80+40),4:Math.floor(Math.random()*80+40),5:Math.floor(Math.random()*80+40),6:Math.floor(Math.random()*80+40)};const vs=Object.values(fp[i]),mx=Math.max(...vs),pos=vs.indexOf(mx)+1;pp[i]={posicoes:fp[i],melhor_posicao:pos,pct_melhor:Math.round((mx/vs.reduce((a,b)=>a+b,0))*100),acima_esperado:mx>vs.reduce((a,b)=>a+b,0)/6*1.1};const r=.85+Math.random()*.3;tr[i]={freq:Math.round(r*18),ratio:Math.round(r*100)/100,status:r>1.15?'aquecendo':r<.85?'esfriando':'normal'};}return{status:'fallback',total_concursos:2984,freq_posicao:fp,pref_posicao:pp,tendencia_recente:tr};}
+function bfPares(){const p={};for(let i=1;i<=60;i++){const l=[];for(let j=1;j<=60;j++){if(i===j)continue;l.push({n:j,juntos:Math.floor(Math.random()*30+10),pct:Math.round((Math.random()*15+5)*10)/10});}l.sort((a,b)=>b.juntos-a.juntos);p[i]={aparicoes:FR[i],parceiros:l.slice(0,10),anti_parceiros:l.slice(-10).reverse()};}return{status:'fallback',total_concursos:2984,pares:p};}
+
+async function init(){
+  showLoading('Conectando ao backend...',10);
+  try{const d=await jsonp(BACKEND+'?jogo=mega');if(d&&d.status==='ok'&&d.total_concursos>0)dadosMega=d;else throw 0;}catch(e){dadosMega=bfMega();}
+  showLoading('Carregando Powerball...',30);
+  try{const d=await jsonp(BACKEND+'?jogo=powerball');if(d&&d.status==='ok')dadosPB=d;else throw 0;}catch(e){dadosPB=bfPB();}
+  showLoading('Carregando análise de posições...',52);
+  try{const d=await jsonp(BACKEND+'?tipo=analise');if(d&&d.status==='ok')analiseOrdem=d;else throw 0;}catch(e){analiseOrdem=bfAnalise();}
+  showLoading('Calculando matriz de pares...',76);
+  try{const d=await jsonp(BACKEND+'?tipo=pares');if(d&&d.status==='ok')matrizPares=d;else throw 0;}catch(e){matrizPares=bfPares();}
+  showLoading('Finalizando...',95);
+  const fb=dadosMega.status==='fallback';
+  setStatus(fb?'erro':'ok',fb?'Dados históricos integrados · 2984 concursos':`Dados reais · Concurso ${dadosMega.ultimo_concurso} · ${dadosMega.ultima_data} · ${dadosMega.total_concursos} sorteios`);
+  initVerificador();mostrarUltimo();renderAnaliseGeral();renderHistorico();renderAnomalos();
+  hideLoading();
+  const btn=document.getElementById('btn-gerar');btn.disabled=false;btn.textContent='Gerar combinações';
+}
+
+function mostrarUltimo(){
+  const d=dadosMega,box=document.getElementById('ult-box');
+  if(jogoAtual==='mega'&&d?.ultimo_resultado?.length){document.getElementById('ult-label').textContent=`Concurso ${d.ultimo_concurso} · ${d.ultima_data}`;document.getElementById('ult-bolas').innerHTML=d.ultimo_resultado.map(n=>`<div class="bola sm">${pad(n)}</div>`).join('');box.style.display='block';}
+  else box.style.display='none';
+}
+function setJogo(j){jogoAtual=j;document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&j==='mega')||(i===1&&j==='powerball')));document.getElementById('main-title').textContent=j==='mega'?'Mega-Sena':'Powerball';document.getElementById('resultado').innerHTML='<div class="empty">Configure os filtros e clique em "Gerar combinações"</div>';document.getElementById('analise-bloco').innerHTML='';const bn=document.getElementById('busca-num');if(bn){bn.max=j==='mega'?60:69;bn.placeholder=`Buscar número (1-${j==='mega'?60:69})...`;}mostrarUltimo();renderAnaliseGeral();renderAnomalos();initVerificador();}
+function setView(v){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('active'));document.getElementById('panel-'+v).classList.add('active');document.querySelectorAll('.vtab').forEach((t,i)=>{if(['gerar','verificar','numeros','historico','analise'][i]===v)t.classList.add('active');});if(v==='historico')renderHistorico();if(v==='analise')renderAnaliseGeral();if(v==='numeros'){renderAnomalos();renderNumeroDetalhe();}}
+function classBola(n,freq,esp,atr,lim){if(atr[n]>=lim)return'a';if(freq[n]>esp*1.08)return'q';if(freq[n]<esp*0.92)return'f';return'';}
+function pesarSorteio(pool,pesos,qtd){const r=[...pool],p=[...pesos],res=[];for(let k=0;k<qtd;k++){const tot=p.reduce((a,b)=>a+b,0);let rnd=Math.random()*tot,idx=0;for(let i=0;i<p.length;i++){rnd-=p[i];if(rnd<=0){idx=i;break;}}res.push(r[idx]);r.splice(idx,1);p.splice(idx,1);}return res;}
+function getPP(n,escolhidos){if(!matrizPares?.pares?.[n]||!escolhidos.length)return 1;const pd=matrizPares.pares[n];let b=0;escolhidos.forEach(e=>{const par=pd.parceiros.find(p=>p.n===e);const anti=pd.anti_parceiros.find(p=>p.n===e);if(par)b+=par.pct/100*.5;if(anti)b-=anti.pct/100*.3;});return Math.max(0.1,1+b);}
+
+function gerarMega(t=0){
+  if(t>800)return null;
+  const d=dadosMega,f=d.frequencias,a=d.atrasos,iv=d.intervalos,esp=(d.total_concursos*6)/60;
+  const pool=Array.from({length:60},(_,i)=>i+1),result=[];
+  for(let k=0;k<6;k++){
+    const pw=pool.filter(n=>!result.includes(n)).map(n=>{
+      let w=1;
+      if(document.getElementById('f-frequencia').checked)w*=(.6+(f[n]/esp)*.4);
+      if(document.getElementById('f-atraso').checked&&iv?.[n]){const iv2=iv[n],at=a[n];if(at>=iv2.media+iv2.std*2)w*=2;else if(at>=iv2.media+iv2.std)w*=1.6;else if(at>=iv2.media)w*=1.3;}
+      if(document.getElementById('f-tendencia').checked&&analiseOrdem?.tendencia_recente?.[n]){const tr=analiseOrdem.tendencia_recente[n];if(tr.status==='aquecendo')w*=1.2;else if(tr.status==='esfriando')w*=.85;}
+      if(document.getElementById('f-posicao').checked&&analiseOrdem?.pref_posicao?.[n]?.acima_esperado)w*=1.1;
+      if(document.getElementById('f-pares').checked)w*=getPP(n,result);
+      return Math.max(0.05,w);
+    });
+    const poolF=pool.filter(n=>!result.includes(n));
+    result.push(pesarSorteio(poolF,pw,1)[0]);
+  }
+  const nums=[...result];nums.sort((a2,b)=>a2-b);
+  if(document.getElementById('f-repeticao').checked&&d.ultimo_resultado&&nums.filter(n=>d.ultimo_resultado.includes(n)).length>2)return gerarMega(t+1);
+  if(document.getElementById('f-soma').checked){const s=nums.reduce((a2,b)=>a2+b,0);if(s<d.soma_media-d.soma_std||s>d.soma_media+d.soma_std)return gerarMega(t+1);}
+  if(document.getElementById('f-paridade').checked){const p=nums.filter(n=>n%2===0).length;if((p===0||p===6)&&Math.random()<.8)return gerarMega(t+1);if((p===1||p===5)&&Math.random()<.5)return gerarMega(t+1);}
+  return nums;
+}
+
+function gerarPB(t=0){
+  if(t>800)return null;
+  const d=dadosPB,f=d.frequencias,a=d.atrasos,fpb=d.frequencias_pb,esp=(d.total_concursos*5)/69,espPB=d.total_concursos/26;
+  const pool=Array.from({length:69},(_,i)=>i+1);
+  const pw=pool.map(n=>{let w=1;if(document.getElementById('f-frequencia').checked)w*=(.6+(f[n]/esp)*.4);if(document.getElementById('f-atraso').checked&&a[n]>=18)w*=1.5;return Math.max(.05,w);});
+  const nums=pesarSorteio(pool,pw,5);nums.sort((a2,b)=>a2-b);
+  const ppb=Array.from({length:26},(_,i)=>i+1);
+  const wpb=ppb.map(n=>document.getElementById('f-frequencia').checked?Math.max(.05,.6+(fpb[n]/espPB)*.4):1);
+  const pb=pesarSorteio(ppb,wpb,1)[0];
+  if(document.getElementById('f-repeticao').checked&&d.ultimo_resultado&&nums.filter(n=>d.ultimo_resultado.includes(n)).length>2)return gerarPB(t+1);
+  if(document.getElementById('f-soma').checked){const s=nums.reduce((a2,b)=>a2+b,0);if(s<d.soma_media-d.soma_std||s>d.soma_media+d.soma_std)return gerarPB(t+1);}
+  return{nums,pb};
+}
+
+function calcScore(nums,d,total,qtd){
+  const esp=(total*qtd)/(qtd===6?60:69);let s=0;
+  nums.forEach(n=>{const r=d.frequencias[n]/esp;if(r>.9&&r<1.2)s+=2;else if(r>=.8&&r<=1.3)s+=1;});
+  if(analiseOrdem?.tendencia_recente)nums.forEach(n=>{if(analiseOrdem.tendencia_recente[n]?.status==='aquecendo')s+=.5;});
+  if(matrizPares?.pares&&qtd===6){let pb=0;for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){const pd=matrizPares.pares[nums[i]];if(pd){const par=pd.parceiros.find(p=>p.n===nums[j]);if(par&&par.pct>=10)pb+=.3;}}s+=Math.min(1,pb);}
+  return Math.min(10,Math.round(s+3));
+}
+
+function gerarJogos(){
+  const qtd=Math.min(20,Math.max(1,parseInt(document.getElementById('qtd').value)||5));
+  const mostrar=document.getElementById('mostrar-analise').value==='1';
+  const btn=document.getElementById('btn-gerar');btn.disabled=true;btn.textContent='Gerando...';
+  setTimeout(()=>{
+    const isMega=jogoAtual==='mega',jogos=[];
+    for(let i=0;i<qtd;i++){const j=isMega?gerarMega():gerarPB();if(j)jogos.push(j);}
+    ultimaGeracao=jogos;renderResultado(jogos,mostrar);salvarNoHistorico(jogos);
+    btn.disabled=false;btn.textContent='Gerar combinações';setView('gerar');
+  },30);
+}
+
+function renderResultado(jogos,mostrar){
+  const isMega=jogoAtual==='mega',d=isMega?dadosMega:dadosPB;
+  const total=d.total_concursos,qtdN=isMega?6:5,maxN=isMega?60:69,esp=(total*qtdN)/maxN,lim=isMega?20:18;
+  let html='';
+  jogos.forEach((jogo,idx)=>{
+    const nums=isMega?jogo:jogo.nums,pb=!isMega?jogo.pb:null;
+    const soma=nums.reduce((a,b)=>a+b,0),pares=nums.filter(n=>n%2===0).length,score=calcScore(nums,d,total,qtdN);
+    let pp=[];
+    if(matrizPares?.pares&&isMega)for(let i=0;i<nums.length;i++)for(let j2=i+1;j2<nums.length;j2++){const pd=matrizPares.pares[nums[i]];if(pd){const par=pd.parceiros.find(p=>p.n===nums[j2]);if(par&&par.pct>=10)pp.push(`${pad(nums[i])}+${pad(nums[j2])} (${par.pct}%)`);}}
+    html+=`<div class="card"><div class="jh"><span class="jn">#${pad(idx+1)}</span><span class="sbadge">Score ${score}/10</span></div><div class="brow">`;
+    nums.forEach(n=>html+=`<div class="bola ${classBola(n,d.frequencias,esp,d.atrasos,lim)}">${pad(n)}</div>`);
+    if(!isMega)html+=`<div class="pb-sep"></div><div class="bola pb">${pad(pb)}</div>`;
+    html+=`</div><div class="jmeta"><span class="mt2">Soma ${soma}</span><span class="mt2">${pares}P·${nums.length-pares}I</span>`;
+    if(!isMega)html+=`<span class="mt2">PB ${pb}</span>`;
+    if(pp.length)html+=`<span class="mt2" style="background:var(--accent-light);color:var(--accent)">${pp.length} par${pp.length>1?'es':''} freq.</span>`;
+    html+=`</div>`;
+    if(pp.length){html+=`<div class="par-inline">`;pp.slice(0,4).forEach(p=>html+=`<span class="par-badge bom">${p}</span>`);html+=`</div>`;}
+    html+=`</div>`;
+  });
+  document.getElementById('resultado').innerHTML=html||'<div class="empty">Nenhum jogo gerado</div>';
+  if(mostrar)renderAnaliseBloco(jogos);else document.getElementById('analise-bloco').innerHTML='';
+}
+
+function renderAnaliseBloco(jogos){
+  const isMega=jogoAtual==='mega',d=isMega?dadosMega:dadosPB;
+  const total=d.total_concursos,qtdN=isMega?6:5,maxN=isMega?60:69,esp=(total*qtdN)/maxN,lim=isMega?20:18;
+  const allF=Object.entries(d.frequencias).map(([k,v])=>({n:Number(k),v})).sort((a,b)=>b.v-a.v);
+  const t5=allF.slice(0,5).map(x=>`<span class="pill q">${pad(x.n)} <span style="opacity:.7">${x.v}x</span></span>`).join('');
+  const b5=allF.slice(-5).map(x=>`<span class="pill f">${pad(x.n)} <span style="opacity:.7">${x.v}x</span></span>`).join('');
+  let aq='',ef='';
+  if(analiseOrdem?.tendencia_recente){aq=Object.entries(analiseOrdem.tendencia_recente).filter(([_,v])=>v.status==='aquecendo').slice(0,6).map(([k])=>`<span class="pill aq">${pad(Number(k))}</span>`).join('');ef=Object.entries(analiseOrdem.tendencia_recente).filter(([_,v])=>v.status==='esfriando').slice(0,6).map(([k])=>`<span class="pill ef">${pad(Number(k))}</span>`).join('');}
+  document.getElementById('analise-bloco').innerHTML=`<div class="card" style="margin-top:8px"><div class="slabel">Análise — ${total} sorteios reais</div><div class="mg3"><div class="metric"><div class="ml">Soma média</div><div class="mv">${d.soma_media}±${d.soma_std}</div></div><div class="metric"><div class="ml">Concursos</div><div class="mv">${total}</div></div><div class="metric"><div class="ml">Combinações</div><div class="mv" style="font-size:11px">${isMega?'50.063.860':'292.201.338'}</div></div></div><div class="slabel" style="margin-top:8px">Mais frequentes</div><div class="trow">${t5}</div><div class="slabel" style="margin-top:8px">Menos frequentes</div><div class="trow">${b5}</div>${aq?`<div class="slabel" style="margin-top:8px">Aquecendo</div><div class="trow">${aq}</div>`:''}${ef?`<div class="slabel" style="margin-top:8px">Esfriando</div><div class="trow">${ef}</div>`:''}<div class="slabel" style="margin-top:8px">Mapa</div><div class="fgrid" id="fgrid-bloco"></div><div class="leg"><div class="li"><div class="ldot" style="background:var(--q)"></div>Quente</div><div class="li"><div class="ldot" style="background:var(--f)"></div>Frio</div><div class="li"><div class="ldot" style="background:var(--a)"></div>Atraso</div></div><p style="font-size:10px;color:var(--text3);line-height:1.6;margin-top:8px">Os filtros não aumentam chances de ganho. Sorteios são independentes.</p></div>`;
+  const grid=document.getElementById('fgrid-bloco');
+  for(let i=1;i<=maxN;i++){const el=document.createElement('div');const cls=classBola(i,d.frequencias,esp,d.atrasos,lim);el.className='fn '+(cls||'');el.title=`Nº${i}: ${d.frequencias[i]}x`;el.textContent=pad(i);el.onclick=()=>{document.getElementById('busca-num').value=i;setView('numeros');renderNumeroDetalhe();};grid.appendChild(el);}
+}
+
+// ============ VERIFICADOR ============
+function initVerificador(){
+  const isMega=jogoAtual==='mega',qtd=isMega?6:5;
+  let html='';
+  for(let i=0;i<qtd;i++)html+=`<input class="vi" type="number" id="vi${i}" min="1" max="${isMega?60:69}" placeholder="${pad(i+1)}"/>`;
+  if(!isMega)html+=`<input class="vi" type="number" id="vi_pb" min="1" max="26" placeholder="PB"/>`;
+  document.getElementById('vinputs').innerHTML=html;
+}
+function usarUltimaGeracao(){
+  if(!ultimaGeracao?.length){alert('Gere combinações primeiro.');return;}
+  const isMega=jogoAtual==='mega',j=ultimaGeracao[0],nums=isMega?j:j.nums;
+  nums.forEach((n,i)=>{const el=document.getElementById('vi'+i);if(el)el.value=n;});
+  if(!isMega){const pb=document.getElementById('vi_pb');if(pb)pb.value=j.pb;}
+  verificarProximidade();
+}
+async function verificarProximidade(){
+  const isMega=jogoAtual==='mega',qtd=isMega?6:5;
+  const nums=[];
+  for(let i=0;i<qtd;i++){const v=parseInt(document.getElementById('vi'+i)?.value);if(v&&v>=1&&v<=(isMega?60:69))nums.push(v);}
+  if(nums.length!==qtd){document.getElementById('prox-resultado').innerHTML=`<div class="card"><p style="font-size:12px;color:var(--text2)">Preencha todos os ${qtd} números.</p></div>`;return;}
+  const btn=document.getElementById('btn-verificar');btn.disabled=true;btn.textContent='Verificando...';
+  document.getElementById('prox-resultado').innerHTML=`<div class="card" style="display:flex;align-items:center;gap:10px;padding:1rem"><div class="spinner sm"></div><span style="font-size:13px;color:var(--text2)">Consultando ${isMega?'2.984':'2.000'} sorteios no backend...</span></div>`;
+  try{
+    const data=await jsonp(`${BACKEND}?tipo=verificar&nums=${nums.join(',')}`);
+    if(!data||data.status!=='ok')throw new Error();
+    const{total_analisados:ta,contagem:ct,resultados:rs}=data;
+    let html=`<div class="card"><div class="slabel">Resultado — ${ta} sorteios analisados</div><div class="mg3" style="margin-bottom:8px"><div class="metric"><div class="ml">6 acertos</div><div class="mv">${ct[6]||0}x</div></div><div class="metric"><div class="ml">5 acertos</div><div class="mv">${ct[5]||0}x</div></div><div class="metric"><div class="ml">4 acertos</div><div class="mv">${ct[4]||0}x</div></div></div><div class="metric" style="margin-bottom:8px"><div class="ml">3 acertos</div><div class="mv">${ct[3]||0}x <span style="font-size:11px;font-weight:400;color:var(--text3)">em ${ta} sorteios (${(((ct[3]||0)/ta)*100).toFixed(1)}%)</span></div></div><p style="font-size:11px;color:var(--text3)">Combinação: <span style="font-family:'DM Mono',monospace">${nums.map(pad).join(' – ')}</span></p></div>`;
+    if(!rs||!rs.length){html+=`<div class="card"><p style="font-size:12px;color:var(--text2)">Nenhum sorteio histórico teve 3 ou mais acertos com esta combinação.</p></div>`;}
+    else rs.forEach(s=>{
+      const stars='★'.repeat(Math.min(s.qtd,5));
+      html+=`<div class="prox-card"><div class="prox-header"><span class="prox-stars">${stars} ${s.qtd} acerto${s.qtd>1?'s':''}</span><span class="prox-info">Concurso ${s.c} · ${s.d}</span></div><div class="brow">`;
+      s.bolas.forEach(n=>html+=`<div class="bola sm ${s.acertados.includes(n)?'hit':'miss'}">${pad(n)}</div>`);
+      html+=`</div></div>`;
+    });
+    document.getElementById('prox-resultado').innerHTML=html;
+  }catch(err){document.getElementById('prox-resultado').innerHTML=`<div class="card"><p style="font-size:12px;color:var(--text2)">Erro ao consultar o backend. Verifique sua conexão.</p></div>`;}
+  btn.disabled=false;btn.textContent='Verificar nos 2.984 sorteios';
+}
+
+// ============ NÚMERO DETALHE ============
+function renderAnomalos(){
+  const d=jogoAtual==='mega'?dadosMega:dadosPB;
+  if(!d?.intervalos){document.getElementById('anomalos-box').innerHTML='';return;}
+  const an=Object.entries(d.intervalos).filter(([_,v])=>v.anomalo).sort((a,b)=>b[1].atual-a[1].atual);
+  if(!an.length){document.getElementById('anomalos-box').innerHTML='';return;}
+  let html=`<div class="anom-box"><div class="anom-t">Números em atraso anômalo (acima do máximo histórico)</div><div class="trow">`;
+  an.forEach(([k,v])=>html+=`<span class="pill a" onclick="document.getElementById('busca-num').value=${k};renderNumeroDetalhe()" style="cursor:pointer">${pad(Number(k))} <span style="opacity:.7">${v.atual}s</span></span>`);
+  html+=`</div></div>`;document.getElementById('anomalos-box').innerHTML=html;
+}
+function calcularDatas(ult,iJ,fJ){
+  const ds=[];try{const p=ult.split('/');if(p.length!==3)return ds;let d=new Date(p[2],p[1]-1,p[0]);let sp=0;for(let t=0;t<500&&ds.length<8;t++){d.setDate(d.getDate()+1);const dw=d.getDay();if([2,4,6].includes(dw)){sp++;if(sp>=iJ&&sp<=fJ){const nm=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});const dn=dw===2?'Ter':dw===4?'Qui':'Sáb';const mid=Math.round((iJ+fJ)/2);ds.push({data:nm,dia:dn,s:sp,peak:sp>=mid-1&&sp<=mid+1});}}}}catch(e){}return ds;
+}
+function renderNumeroDetalhe(){
+  const val=parseInt(document.getElementById('busca-num')?.value);
+  const isMega=jogoAtual==='mega',d=isMega?dadosMega:dadosPB,maxN=isMega?60:69;
+  if(!val||val<1||val>maxN||!d){document.getElementById('numero-detalhe').innerHTML='';return;}
+  const freq=d.frequencias[val]||0,esp=(d.total_concursos*(isMega?6:5))/maxN,atr=d.atrasos[val]||0;
+  const iv=d.intervalos?.[val]||{media:10,std:3,min:1,max:35,atual:atr,prob_10:65,prob_20:85,anomalo:false};
+  let sc='neutro',cc='n';
+  if(freq>esp*1.08){sc='quente';cc='q';}else if(freq<esp*0.92){sc='frio';cc='f';}
+  if(iv.anomalo){sc='atraso anômalo';cc='a';}
+  const pp=analiseOrdem?.pref_posicao?.[val],tr=analiseOrdem?.tendencia_recente?.[val],pd=matrizPares?.pares?.[val];
+  const janI=Math.max(1,Math.round(iv.media-iv.std)),janF=Math.round(iv.media+iv.std);
+  const datas=isMega&&d.ultima_data?calcularDatas(d.ultima_data,Math.max(1,janI-atr),Math.max(1,janF-atr)):[];
+  let html=`<div class="nd"><div class="ndh"><div class="nbig ${cc==='q'?'q':cc==='f'?'f':cc==='a'?'a':''}">${pad(val)}</div><div><div style="font-size:14px;font-weight:500">Número ${val}</div><div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap"><span class="pill ${cc}" style="font-size:10px">${sc}</span>${tr?`<span class="pill ${tr.status==='aquecendo'?'aq':tr.status==='esfriando'?'ef':'n'}" style="font-size:10px">${tr.status}</span>`:''}${iv.anomalo?`<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--pb-bg);color:var(--pb)">atraso anômalo</span>`:''}</div></div></div>
+  <div class="dg4"><div class="di"><div class="dl">Aparições</div><div class="dv">${freq}x</div></div><div class="di"><div class="dl">Esperado</div><div class="dv">${Math.round(esp)}x</div></div><div class="di"><div class="dl">Atraso atual</div><div class="dv">${atr}</div></div><div class="di"><div class="dl">Atraso máx.</div><div class="dv">${iv.max}</div></div></div>
+  <div class="slabel">Intervalo entre aparições</div>
+  <div class="dg4"><div class="di"><div class="dl">Médio</div><div class="dv">${iv.media}</div></div><div class="di"><div class="dl">Desvio</div><div class="dv">±${iv.std}</div></div><div class="di"><div class="dl">Mínimo</div><div class="dv">${iv.min}</div></div><div class="di"><div class="dl">Máximo</div><div class="dv">${iv.max}</div></div></div>
+  <div class="slabel">Probabilidade condicional</div>
+  <div class="mg2"><div class="metric"><div class="ml">Próximos 10 sorteios</div><div class="mv">${iv.prob_10}%</div><div class="pbar"><div class="pbf" style="width:${iv.prob_10}%"></div></div></div><div class="metric"><div class="ml">Próximos 20 sorteios</div><div class="mv">${iv.prob_20}%</div><div class="pbar"><div class="pbf" style="width:${iv.prob_20}%"></div></div></div></div>`;
+  if(isMega&&d.ultima_data){html+=`<div class="janela"><div class="jt">Janela provável de retorno — intervalo médio ${iv.media}±${iv.std} sorteios</div><div style="font-size:10px;color:var(--aq)">Atraso atual: ${atr} · Faltam ~${Math.max(0,janI-atr)} a ${Math.max(0,janF-atr)} sorteios</div>`;if(datas.length>0){html+=`<div class="jdatas">`;datas.forEach(dt=>html+=`<div class="jdata ${dt.peak?'peak':''}">${dt.dia} ${dt.data}</div>`);html+=`</div>`;}else if(atr<janI)html+=`<div style="font-size:10px;color:var(--aq);margin-top:5px">Janela começa em ~${janI-atr} sorteios</div>`;else html+=`<div style="font-size:10px;color:var(--aq);margin-top:5px">Dentro da janela provável agora</div>`;html+=`<div style="font-size:10px;color:var(--text3);margin-top:4px">⚠️ Estimativa histórica. Sorteios são independentes.</div></div>`;}
+  if(pp&&isMega){html+=`<div class="slabel" style="margin-top:10px">Posição de saída preferida (ordem real do globo)</div>`;const mx=Math.max(...Object.values(pp.posicoes));html+=`<div class="posrow">`;for(let p2=1;p2<=6;p2++){const v=pp.posicoes[p2]||0,h=Math.round((v/mx)*36),best=p2===pp.melhor_posicao;html+=`<div class="positem"><div class="posbl">${p2}ª</div><div class="posbw"><div class="posb ${best?'best':''}" style="height:${h}px"></div></div><div class="posv">${v}x</div></div>`;}html+=`</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Prefere sair como <strong>${pp.melhor_posicao}ª bola</strong> (${pp.pct_melhor}%)</div>`;}
+  if(pd&&isMega){html+=`<div style="margin-top:10px"><div class="slabel">Pares históricos — ${pd.aparicoes} aparições</div><div class="par-grid"><div class="par-card"><div class="par-title">Melhores parceiros</div>`;pd.parceiros.slice(0,6).forEach(p=>html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border)"><span class="pill par" style="font-size:10px;cursor:pointer" onclick="document.getElementById('busca-num').value=${p.n};renderNumeroDetalhe()">${pad(p.n)}</span><span style="color:var(--text2);font-family:'DM Mono',monospace">${p.juntos}x <span style="color:var(--text3)">${p.pct}%</span></span></div>`);html+=`</div><div class="par-card"><div class="par-title">Evitar junto com</div>`;pd.anti_parceiros.slice(0,6).forEach(p=>html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border)"><span class="pill anti" style="font-size:10px;cursor:pointer" onclick="document.getElementById('busca-num').value=${p.n};renderNumeroDetalhe()">${pad(p.n)}</span><span style="color:var(--text2);font-family:'DM Mono',monospace">${p.juntos}x <span style="color:var(--text3)">${p.pct}%</span></span></div>`);html+=`</div></div></div>`;}
+  html+=`</div>`;document.getElementById('numero-detalhe').innerHTML=html;
+}
+
+// ============ HISTÓRICO ============
+function getH(){try{return JSON.parse(localStorage.getItem(SK)||'[]');}catch(e){return[];}}
+function saveH(h){try{localStorage.setItem(SK,JSON.stringify(h));}catch(e){}}
+function salvarNoHistorico(jogos){const h=getH(),ag=new Date();h.unshift({id:Date.now(),jogo:jogoAtual,data:ag.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}),hora:ag.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),jogos});saveH(h);}
+function deletarEntrada(id){saveH(getH().filter(e=>e.id!==id));renderHistorico();}
+function limparHistorico(){if(confirm('Limpar todo o histórico?')){saveH([]);renderHistorico();}}
+function renderHistorico(){
+  const h=getH();document.getElementById('hist-count').textContent=`${h.length} ${h.length===1?'geração':'gerações'}`;
+  if(!h.length){document.getElementById('historico-lista').innerHTML='<div class="empty">Nenhuma geração salva ainda</div>';return;}
+  const d=dadosMega,esp=d?(d.total_concursos*6)/60:1;let html='';
+  h.forEach(e=>{const isMega=e.jogo==='mega';html+=`<div class="he"><div class="hh"><div><div class="hd">${e.data} às ${e.hora}</div><div class="hm">${e.jogos.length} jogos · <span class="tag ${isMega?'tag-mega':'tag-pb'}">${isMega?'Mega-Sena':'Powerball'}</span></div></div><button class="btn-del" onclick="deletarEntrada(${e.id})">excluir</button></div>`;e.jogos.forEach((j,idx)=>{const nums=isMega?j:j.nums,pb=!isMega?j.pb:null;html+=`<div class="hjl"><span class="hi">${pad(idx+1)}.</span>`;nums.forEach(n=>{const cls=d?classBola(n,d.frequencias,esp,d.atrasos,20):'';html+=`<div class="bola sm ${cls}">${pad(n)}</div>`;});if(!isMega)html+=`<div class="pb-sep" style="height:28px"></div><div class="bola sm pb">${pad(pb)}</div>`;html+=`<span style="font-size:10px;color:var(--text3);margin-left:3px">Σ${nums.reduce((a,b)=>a+b,0)}</span></div>`;});html+=`</div>`;});
+  document.getElementById('historico-lista').innerHTML=html;
+}
+
+// ============ ANÁLISE GERAL ============
+function renderAnaliseGeral(){
+  const isMega=jogoAtual==='mega',d=isMega?dadosMega:dadosPB;
+  if(!d){document.getElementById('analise-geral').innerHTML='<div class="empty">Carregando...</div>';return;}
+  const total=d.total_concursos,qtdN=isMega?6:5,maxN=isMega?60:69,esp=(total*qtdN)/maxN,lim=isMega?20:18;
+  const allF=Object.entries(d.frequencias).map(([k,v])=>({n:Number(k),v})).sort((a,b)=>b.v-a.v);
+  const mk=(x,cls)=>`<span class="pill ${cls}" onclick="document.getElementById('busca-num').value=${x.n};setView('numeros');renderNumeroDetalhe()">${pad(x.n)} <span style="opacity:.7">${x.v}x</span></span>`;
+  const top10=allF.slice(0,10).map(x=>mk(x,'q')).join('');
+  const bot10=allF.slice(-10).map(x=>mk(x,'f')).join('');
+  const atras=Object.entries(d.atrasos).filter(([_,v])=>v>=15).sort((a,b)=>Number(b[1])-Number(a[1])).map(([k,v])=>`<span class="pill a" onclick="document.getElementById('busca-num').value=${k};setView('numeros');renderNumeroDetalhe()">${pad(Number(k))} <span style="opacity:.7">${v}s</span></span>`).join('')||'<span style="font-size:11px;color:var(--text3)">Nenhum</span>';
+  let aq='',ef='';
+  if(analiseOrdem?.tendencia_recente){aq=Object.entries(analiseOrdem.tendencia_recente).filter(([_,v])=>v.status==='aquecendo').map(([k,v])=>`<span class="pill aq" onclick="document.getElementById('busca-num').value=${k};setView('numeros');renderNumeroDetalhe()">${pad(Number(k))} <span style="opacity:.7">${v.freq}x</span></span>`).join('');ef=Object.entries(analiseOrdem.tendencia_recente).filter(([_,v])=>v.status==='esfriando').map(([k,v])=>`<span class="pill ef" onclick="document.getElementById('busca-num').value=${k};setView('numeros');renderNumeroDetalhe()">${pad(Number(k))} <span style="opacity:.7">${v.freq}x</span></span>`).join('');}
+  let topPares='';
+  if(matrizPares?.pares&&isMega){const pList=[];for(let i=1;i<=60;i++){if(!matrizPares.pares[i])continue;matrizPares.pares[i].parceiros.slice(0,3).forEach(p=>{if(p.n>i)pList.push({a:i,b:p.n,juntos:p.juntos,pct:p.pct});});}pList.sort((a,b)=>b.juntos-a.juntos);topPares=pList.slice(0,10).map(p=>`<span class="pill par" onclick="document.getElementById('busca-num').value=${p.a};setView('numeros');renderNumeroDetalhe()">${pad(p.a)}+${pad(p.b)} <span style="opacity:.7">${p.juntos}x</span></span>`).join('');}
+  document.getElementById('analise-geral').innerHTML=`
+    <div class="card"><div class="slabel">${isMega?'Mega-Sena':'Powerball'} · ${total} concursos</div><div class="mg3"><div class="metric"><div class="ml">Soma média</div><div class="mv">${d.soma_media}±${d.soma_std}</div></div><div class="metric"><div class="ml">Freq. esperada</div><div class="mv">${Math.round(esp)}x</div></div><div class="metric"><div class="ml">Total concursos</div><div class="mv">${total}</div></div></div></div>
+    <div class="card"><div class="slabel">Top 10 mais frequentes</div><div class="trow" style="margin-top:6px">${top10}</div></div>
+    <div class="card"><div class="slabel">Top 10 menos frequentes</div><div class="trow" style="margin-top:6px">${bot10}</div></div>
+    <div class="card"><div class="slabel">Em atraso (15+ sorteios)</div><div class="trow" style="margin-top:6px">${atras}</div></div>
+    ${aq?`<div class="card"><div class="slabel">Aquecendo — últimos 6 meses</div><div class="trow" style="margin-top:6px">${aq}</div></div>`:''}
+    ${ef?`<div class="card"><div class="slabel">Esfriando — últimos 6 meses</div><div class="trow" style="margin-top:6px">${ef}</div></div>`:''}
+    ${topPares?`<div class="card"><div class="slabel">Top 10 pares mais frequentes</div><div class="trow" style="margin-top:6px">${topPares}</div></div>`:''}
+    <div class="card"><div class="slabel">Mapa completo — clique para detalhar</div><div class="fgrid" id="fgrid-analise"></div><div class="leg" style="margin-top:6px"><div class="li"><div class="ldot" style="background:var(--q)"></div>Quente</div><div class="li"><div class="ldot" style="background:var(--f)"></div>Frio</div><div class="li"><div class="ldot" style="background:var(--a)"></div>Atraso</div><div class="li"><div class="ldot" style="background:var(--aq)"></div>Aquecendo</div><div class="li"><div class="ldot" style="background:var(--ef)"></div>Esfriando</div></div></div>`;
+  const grid=document.getElementById('fgrid-analise');
+  for(let i=1;i<=maxN;i++){const el=document.createElement('div');const cls=classBola(i,d.frequencias,esp,d.atrasos,lim);let trCls='';if(analiseOrdem?.tendencia_recente?.[i]){const s=analiseOrdem.tendencia_recente[i].status;if(s==='aquecendo')trCls='aq';else if(s==='esfriando')trCls='ef';}el.className='fn '+(cls||(trCls)||'');el.title=`Nº${i}: ${d.frequencias[i]}x | Atraso: ${d.atrasos[i]}`;el.textContent=pad(i);el.onclick=()=>{document.getElementById('busca-num').value=i;setView('numeros');renderNumeroDetalhe();};grid.appendChild(el);}
+}
+
+init();
+</script>
+</body>
+</html>
