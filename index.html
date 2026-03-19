@@ -171,7 +171,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="tab" onclick="setJogo('powerball')">Powerball</button>
     </div>
     <div class="slabel">Configuração</div>
-    <div class="cg"><label>Quantidade de jogos</label><input type="number" id="qtd" min="1" max="20" value="5"/></div>
+    <div class="cg"><label>Quantidade de jogos</label><input type="number" id="qtd" min="1" max="50" value="5"/></div>
     <div class="cg"><label>Análise combinatória</label><select id="mostrar-analise"><option value="1">Mostrar</option><option value="0">Ocultar</option></select></div>
     <hr class="divider"/>
     <div class="slabel">Filtros estatísticos</div>
@@ -362,7 +362,7 @@ function calcScore(nums,d,total,qtd){
 }
 
 function gerarJogos(){
-  const qtd=Math.min(20,Math.max(1,parseInt(document.getElementById('qtd').value)||5));
+  const qtd=Math.min(50,Math.max(1,parseInt(document.getElementById('qtd').value)||5));
   const mostrar=document.getElementById('mostrar-analise').value==='1';
   const btn=document.getElementById('btn-gerar');btn.disabled=true;btn.textContent='Gerando...';
   setTimeout(()=>{
